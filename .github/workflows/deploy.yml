@@ -1,14 +1,33 @@
-name: Deploy API
+name: CI & Database Verification
 
 on:
   push:
     branches:
-      - main        # runs automatically on every push to main
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  migrate-and-seed:
-    name: Migrate & Seed Database
+  verify:
+    name: Build, Migrate, Seed & Test
     runs-on: ubuntu-latest
+
+    # Spins up a temporary PostgreSQL database container inside GitHub Actions
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: library_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -25,21 +44,32 @@ jobs:
         working-directory: api
         run: npm ci
 
+      - name: Typecheck TypeScript
+        working-directory: api
+        run: npx tsc --noEmit
+
       - name: Generate Prisma Client
         working-directory: api
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma generate
 
       - name: Run migrations
         working-directory: api
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma migrate deploy   # safe for production (no --dev flag)
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/library_db?schema=public
+        run: npx prisma migrate deploy
 
       - name: Seed database
         working-directory: api
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/library_db?schema=public
         run: npm run db:seed
 
+      - name: Run Integration Tests
+        working-directory: api
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/library_db?schema=public
+          JWT_SECRET: ci-test-jwt-secret-key-32chars-long
+          JWT_REFRESH_SECRET: ci-test-refresh-secret-key-32chars
+        run: |
+          npm run test
+          npm run test:auth
