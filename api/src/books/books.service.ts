@@ -1,14 +1,42 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateBookDto, UpdateBookDto } from '../dto';
+import { CreateBookDto } from './dto/create-book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
+import { QueryBooksDto } from './dto/query-books.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
-export class BookService {
+export class BooksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(genreId?: number) {
+  /**
+   * Builds a Prisma where clause from genreId/search and applies skip/take for pagination.
+   */
+  async findAll(query?: QueryBooksDto) {
+    const where: Prisma.BookWhereInput = {};
+
+    if (query?.genreId) {
+      where.genreId = query.genreId;
+    }
+
+    if (query?.search && query.search.trim().length > 0) {
+      const term = query.search.trim();
+      where.OR = [
+        { title: { contains: term, mode: 'insensitive' } },
+        { author: { contains: term, mode: 'insensitive' } },
+        { isbn: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const limit = query?.limit && query.limit > 0 ? query.limit : undefined;
+    const skip = limit ? (page - 1) * limit : undefined;
+    const take = limit;
+
     return this.prisma.book.findMany({
-      where: genreId ? { genreId } : undefined,
+      where,
+      skip,
+      take,
       include: {
         genre: true,
         _count: { select: { reviews: true } },
@@ -80,4 +108,3 @@ export class BookService {
     });
   }
 }
-

@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateGenreDto, UpdateGenreDto } from '../dto';
+import { CreateGenreDto } from './dto/create-genre.dto';
+import { UpdateGenreDto } from './dto/update-genre.dto';
 
 @Injectable()
-export class GenreService {
+export class GenresService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
@@ -36,4 +37,3 @@ export class GenreService {
     return this.prisma.genre.delete({ where: { id } });
   }
 }
-

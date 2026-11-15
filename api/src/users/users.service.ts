@@ -2,9 +2,10 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, CreateReviewDto } from '../dto';
 import { Role } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
@@ -18,7 +19,10 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
-        id: true, email: true, role: true, createdAt: true,
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
         reviews: {
           include: { book: { select: { id: true, title: true } } },
           orderBy: { createdAt: 'desc' },
@@ -30,10 +34,17 @@ export class UserService {
   }
 
   async create(dto: CreateUserDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
     if (existing) throw new ConflictException('Email already in use');
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
     return this.prisma.user.create({
-      data: { email: dto.email, password: dto.password, role: Role.PATRON },
+      data: {
+        email: dto.email.toLowerCase(),
+        password: hashedPassword,
+        role: dto.role || Role.PATRON,
+      },
       select: { id: true, email: true, role: true, createdAt: true },
     });
   }
@@ -63,4 +74,3 @@ export class UserService {
     });
   }
 }
-

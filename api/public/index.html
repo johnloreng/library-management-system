@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Management System - Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --success: #10b981;
+      --danger: #ef4444;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 { font-size: 1.75rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--card-bg);
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-librarian { background: #818cf8; color: #1e1b4b; }
+    .badge-patron { background: #34d399; color: #064e3b; }
+    .badge-guest { background: #64748b; color: #fff; }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    .btn-logout:hover { background: var(--danger); color: #fff; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .quick-fills {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-chip {
+      background: #334155;
+      color: #cbd5e1;
+      border: none;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-chip:hover { background: #475569; color: #fff; }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    input, select {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.65rem;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .alert {
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+      display: none;
+    }
+    .alert-success { background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); color: #6ee7b7; }
+    .alert-danger { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; }
+
+    .token-box {
+      margin-top: 1rem;
+      background: #0f172a;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-family: monospace;
+      font-size: 0.75rem;
+      word-break: break-all;
+      max-height: 80px;
+      overflow-y: auto;
+      color: #38bdf8;
+    }
+
+    .catalog-section {
+      margin-top: 1.5rem;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .books-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .books-table th, .books-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .books-table th {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .action-btn {
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #334155;
+      color: #fff;
+    }
+    .action-btn:hover { background: #475569; }
+    .action-btn-danger { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: #fca5a5; }
+    .action-btn-danger:hover { background: var(--danger); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📚 Library Management Portal</h1>
+      <div class="user-pill" id="userPill">
+        <span>Status: <strong id="userDisplay">Not Logged In</strong></span>
+        <span class="badge badge-guest" id="roleBadge">GUEST</span>
+        <button class="btn-logout" id="logoutBtn" style="display:none;" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Login Card -->
+      <div class="card">
+        <h2 class="card-title">🔑 Account Login</h2>
+        <div class="quick-fills">
+          <button class="btn-chip" onclick="fillLibrarian()">👤 Fill Librarian</button>
+          <button class="btn-chip" onclick="fillPatron()">📖 Fill Patron</button>
+        </div>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="loginEmail" required placeholder="name@library.com" value="librarian@library.com">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" required placeholder="••••••••" value="librarian123">
+          </div>
+          <button type="submit" class="btn-primary" id="loginSubmitBtn">Sign In</button>
+        </form>
+
+        <div id="loginAlert" class="alert"></div>
+        <div id="tokenContainer" style="display:none;">
+          <label style="margin-top:0.75rem;">Active JWT Token:</label>
+          <div class="token-box" id="jwtTokenDisplay"></div>
+        </div>
+      </div>
+
+      <!-- RolesGuard Testing Card -->
+      <div class="card">
+        <h2 class="card-title">🛡️ RolesGuard Permission Test</h2>
+        <p style="color:var(--text-muted); font-size:0.875rem; margin-bottom:1rem;">
+          Test creating a book using your active session. Only accounts with role <strong>LIBRARIAN</strong> are permitted by the <code>RolesGuard</code>.
+        </p>
+
+        <form id="createBookForm" onsubmit="handleCreateBook(event)">
+          <div class="form-group">
+            <label>Book Title</label>
+            <input type="text" id="bookTitle" required value="The Silmarillion" placeholder="Title">
+          </div>
+          <div class="form-group">
+            <label>Author</label>
+            <input type="text" id="bookAuthor" required value="J.R.R. Tolkien" placeholder="Author">
+          </div>
+          <div class="form-group">
+            <label>ISBN (10-13 digits)</label>
+            <input type="text" id="bookIsbn" required value="9780618391110" placeholder="ISBN">
+          </div>
+          <div class="form-group">
+            <label>Genre</label>
+            <select id="bookGenreSelect"></select>
+          </div>
+          <button type="submit" class="btn-primary" style="background:#059669;">
+            ➕ Create Book (Tests RolesGuard)
+          </button>
+        </form>
+
+        <div id="guardAlert" class="alert"></div>
+      </div>
+    </div>
+
+    <!-- Catalog & Search -->
+    <div class="card catalog-section">
+      <h2 class="card-title">📖 Live Book Catalog (Search & Genre Filter)</h2>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search by title, author, or ISBN..." oninput="debounceSearch()">
+        <select id="genreFilter" style="max-width: 200px;" onchange="loadBooks()">
+          <option value="">All Genres</option>
+        </select>
+        <button class="action-btn" onclick="loadBooks()">Search</button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="books-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Genre</th>
+              <th>Copies</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="booksTableBody">
+            <tr><td colspan="5" style="text-align:center;">Loading books...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = localStorage.getItem('library_jwt') || null;
+    let currentUser = null;
+    let searchTimeout = null;
+
+    function fillLibrarian() {
+      document.getElementById('loginEmail').value = 'librarian@library.com';
+      document.getElementById('loginPassword').value = 'librarian123';
+    }
+
+    function fillPatron() {
+      document.getElementById('loginEmail').value = 'patron@library.org';
+      document.getElementById('loginPassword').value = 'secure_password_hash';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const alertBox = document.getElementById('loginAlert');
+
+      alertBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || 'Login failed');
+        }
+
+        authToken = data.accessToken;
+        currentUser = data.user;
+        localStorage.setItem('library_jwt', authToken);
+        localStorage.setItem('library_user', JSON.stringify(currentUser));
+
+        alertBox.className = 'alert alert-success';
+        alertBox.innerText = `✓ Login successful! Logged in as ${currentUser.email} (${currentUser.role})`;
+        alertBox.style.display = 'block';
+
+        updateUI();
+      } catch (err) {
+        alertBox.className = 'alert alert-danger';
+        alertBox.innerText = `✗ ${err.message}`;
+        alertBox.style.display = 'block';
+      }
+    }
+
+    function logout() {
+      authToken = null;
+      currentUser = null;
+      localStorage.removeItem('library_jwt');
+      localStorage.removeItem('library_user');
+      updateUI();
+    }
+
+    function updateUI() {
+      const userDisplay = document.getElementById('userDisplay');
+      const roleBadge = document.getElementById('roleBadge');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const tokenContainer = document.getElementById('tokenContainer');
+      const tokenDisplay = document.getElementById('jwtTokenDisplay');
+
+      if (authToken && currentUser) {
+        userDisplay.innerText = currentUser.email;
+        roleBadge.innerText = currentUser.role;
+        roleBadge.className = currentUser.role === 'LIBRARIAN' ? 'badge badge-librarian' : 'badge badge-patron';
+        logoutBtn.style.display = 'inline-block';
+        tokenContainer.style.display = 'block';
+        tokenDisplay.innerText = authToken;
+      } else {
+        userDisplay.innerText = 'Not Logged In';
+        roleBadge.innerText = 'GUEST';
+        roleBadge.className = 'badge badge-guest';
+        logoutBtn.style.display = 'none';
+        tokenContainer.style.display = 'none';
+      }
+    }
+
+    async function handleCreateBook(e) {
+      e.preventDefault();
+      const alertBox = document.getElementById('guardAlert');
+      alertBox.style.display = 'none';
+
+      const title = document.getElementById('bookTitle').value;
+      const author = document.getElementById('bookAuthor').value;
+      const isbn = document.getElementById('bookIsbn').value + Math.floor(Math.random() * 10);
+      const genreId = parseInt(document.getElementById('bookGenreSelect').value);
+
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+        const res = await fetch('/books', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            title,
+            author,
+            isbn,
+            description: 'Created from web portal',
+            genreId,
+            totalCopies: 3
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.status === 403) {
+          alertBox.className = 'alert alert-danger';
+          alertBox.innerText = `🚫 RolesGuard Blocked Request: ${data.message} (Requires LIBRARIAN role)`;
+          alertBox.style.display = 'block';
+        } else if (!res.ok) {
+          alertBox.className = 'alert alert-danger';
+          alertBox.innerText = `✗ Error: ${data.message || 'Creation failed'}`;
+          alertBox.style.display = 'block';
+        } else {
+          alertBox.className = 'alert alert-success';
+          alertBox.innerText = `✓ RolesGuard Permitted: Book "${data.title}" successfully created!`;
+          alertBox.style.display = 'block';
+          loadBooks();
+        }
+      } catch (err) {
+        alertBox.className = 'alert alert-danger';
+        alertBox.innerText = `✗ Error: ${err.message}`;
+        alertBox.style.display = 'block';
+      }
+    }
+
+    async function loadGenres() {
+      try {
+        const res = await fetch('/genres');
+        const genres = await res.json();
+        const genreSelect = document.getElementById('bookGenreSelect');
+        const genreFilter = document.getElementById('genreFilter');
+
+        genreSelect.innerHTML = '';
+        genreFilter.innerHTML = '<option value="">All Genres</option>';
+
+        genres.forEach(g => {
+          const opt = document.createElement('option');
+          opt.value = g.id;
+          opt.innerText = `${g.name} (${g._count ? g._count.books : 0} books)`;
+          genreSelect.appendChild(opt);
+
+          const filterOpt = document.createElement('option');
+          filterOpt.value = g.id;
+          filterOpt.innerText = g.name;
+          genreFilter.appendChild(filterOpt);
+        });
+      } catch (err) {
+        console.error('Failed to load genres', err);
+      }
+    }
+
+    function debounceSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(loadBooks, 300);
+    }
+
+    async function loadBooks() {
+      const search = document.getElementById('searchInput').value;
+      const genreId = document.getElementById('genreFilter').value;
+      const tbody = document.getElementById('booksTableBody');
+
+      let url = '/books?';
+      if (search) url += `search=${encodeURIComponent(search)}&`;
+      if (genreId) url += `genreId=${genreId}`;
+
+      try {
+        const res = await fetch(url);
+        const books = await res.json();
+
+        if (!Array.isArray(books) || books.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No books found matching criteria</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = books.map(b => `
+          <tr>
+            <td><strong>${b.title}</strong></td>
+            <td>${b.author}</td>
+            <td><span class="badge" style="background:#334155; color:#cbd5e1;">${b.genre ? b.genre.name : 'Unknown'}</span></td>
+            <td>${b.availableCopies} / ${b.totalCopies}</td>
+            <td>
+              <button class="action-btn" onclick="borrowBook(${b.id})">Borrow</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger);">Error loading books: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function borrowBook(bookId) {
+      if (!authToken) {
+        alert('Please login first to borrow books!');
+        return;
+      }
+      try {
+        const res = await fetch(`/books/${bookId}/borrow`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+        if (!res.ok) alert(data.message || 'Borrow failed');
+        else {
+          alert('✓ Book borrowed successfully!');
+          loadBooks();
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Initialize
+    const savedUser = localStorage.getItem('library_user');
+    if (savedUser) {
+      try { currentUser = JSON.parse(savedUser); } catch {}
+    }
+    updateUI();
+    loadGenres();
+    loadBooks();
+  </script>
+</body>
+</html>
+

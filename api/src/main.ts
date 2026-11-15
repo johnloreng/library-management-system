@@ -2,6 +2,8 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import * as fs from 'fs';
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,15 +18,33 @@ async function bootstrap() {
 
   app.enableCors();
 
-  // Root health-check / index route
+  // Root portal and health endpoints
   const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get('/', (_req: unknown, res: { json: (o: object) => void }) => {
+  const htmlPath = path.join(__dirname, '..', 'public', 'index.html');
+
+  const servePortal = (req: { headers: { accept?: string } }, res: { send: (html: string) => void; json: (o: object) => void; setHeader: (k: string, v: string) => void }) => {
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({
+        name: 'Library Management API',
+        version: '1.0.0',
+        endpoints: ['/auth', '/genres', '/books', '/users'],
+      });
+    }
+
+    if (fs.existsSync(htmlPath)) {
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(fs.readFileSync(htmlPath, 'utf8'));
+    }
+
     res.json({
       name: 'Library Management API',
       version: '1.0.0',
-      endpoints: ['/genres', '/books', '/users'],
+      endpoints: ['/auth', '/genres', '/books', '/users'],
     });
-  });
+  };
+
+  httpAdapter.get('/', servePortal);
+  httpAdapter.get('/login', servePortal);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
@@ -32,4 +52,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

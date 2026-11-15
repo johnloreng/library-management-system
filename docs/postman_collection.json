@@ -1,0 +1,512 @@
+{
+  "info": {
+    "_postman_id": "b1b8e8f2-8c43-4a12-8e3b-9a997d4c82b1",
+    "name": "Library Management System API",
+    "description": "Postman Collection for Library Management System: Auth, Users, Genres (Full CRUD), and Books (Full CRUD with Search, Filtering & Pagination).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "librarianToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "patronToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User (Patron)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patron_test@library.org\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registers a new patron user and issues an access token and refresh token."
+          }
+        },
+        {
+          "name": "Login (Librarian)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.collectionVariables.set('librarianToken', jsonData.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"librarian@library.com\",\n  \"password\": \"librarian123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Logs in the seeded librarian account. Rate-limited to 5 requests per minute via @nestjs/throttler."
+          }
+        },
+        {
+          "name": "Login (Patron)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.collectionVariables.set('patronToken', jsonData.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patron@library.org\",\n  \"password\": \"secure_password_hash\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Logs in as a patron user."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Exchanges a valid refresh token for a new access token."
+          }
+        },
+        {
+          "name": "Get Current User (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarianToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Returns the authenticated user extracted from the JWT token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get User Profile (/users/profile - Stretch)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patronToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            },
+            "description": "Stretch task: reads the authenticated user from the request using @Req()."
+          }
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookId\": 1,\n  \"userId\": 1,\n  \"rating\": 5,\n  \"comment\": \"Fantastic read! Highly recommend.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "reviews"]
+            }
+          }
+        },
+        {
+          "name": "Get Reviews for Book",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/reviews/book/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "reviews", "book", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Genres (Full CRUD)",
+      "item": [
+        {
+          "name": "List Genres",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/genres",
+              "host": ["{{baseUrl}}"],
+              "path": ["genres"]
+            },
+            "description": "Lists all genres with book counts."
+          }
+        },
+        {
+          "name": "Get Genre by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/genres/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["genres", "1"]
+            },
+            "description": "Retrieves single genre and its books."
+          }
+        },
+        {
+          "name": "Create Genre (Librarian Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarianToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Historical Fiction\",\n  \"slug\": \"historical-fiction\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/genres",
+              "host": ["{{baseUrl}}"],
+              "path": ["genres"]
+            },
+            "description": "Creates a new genre. Guarded by RolesGuard (LIBRARIAN only)."
+          }
+        },
+        {
+          "name": "Update Genre (Librarian Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarianToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Classic Historical Fiction\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/genres/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["genres", "1"]
+            },
+            "description": "Updates a genre. Guarded by RolesGuard."
+          }
+        },
+        {
+          "name": "Delete Genre (Librarian Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarianToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/genres/5",
+              "host": ["{{baseUrl}}"],
+              "path": ["genres", "5"]
+            },
+            "description": "Deletes a genre. Guarded by RolesGuard."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Books (Full CRUD, Search, Filter & Pagination)",
+      "item": [
+        {
+          "name": "List Books (With Search, Genre Filter, and Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books?search=Tolkien&genreId=2&page=1&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Tolkien",
+                  "description": "Case-insensitive search across title, author, and ISBN"
+                },
+                {
+                  "key": "genreId",
+                  "value": "2",
+                  "description": "Filter by genre ID"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (pagination)"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Items per page (pagination)"
+                }
+              ]
+            },
+            "description": "GET /books reads genreId, search, page, and limit from @Query() and applies Prisma where and skip/take."
+          }
+        },
+        {
+          "name": "Get Book by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", "1"]
+            },
+            "description": "Fetches a book by ID with nested genre and user reviews."
+          }
+        },
+        {
+          "name": "Create Book (Librarian Only - Guarded)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarianToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Silmarillion\",\n  \"author\": \"J.R.R. Tolkien\",\n  \"isbn\": \"9780618391110\",\n  \"description\": \"A collection of mythopoeic stories describing the universe of Eä.\",\n  \"totalCopies\": 3,\n  \"genreId\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": ["{{baseUrl}}"],
+              "path": ["books"]
+            },
+            "description": "Guarded by JwtAuthGuard and RolesGuard. Requires LIBRARIAN role."
+          }
+        },
+        {
+          "name": "Update Book (Librarian Only - Guarded)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarianToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Silmarillion (Illustrated Edition)\",\n  \"totalCopies\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", "1"]
+            },
+            "description": "Guarded by RolesGuard. Updates book details."
+          }
+        },
+        {
+          "name": "Delete Book (Librarian Only - Guarded)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{librarianToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/books/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", "1"]
+            },
+            "description": "Guarded by RolesGuard. Deletes book."
+          }
+        },
+        {
+          "name": "Borrow Book (Authenticated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patronToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/books/1/borrow",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", "1", "borrow"]
+            },
+            "description": "Decrements availableCopies by 1."
+          }
+        },
+        {
+          "name": "Return Book (Authenticated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patronToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/books/1/return",
+              "host": ["{{baseUrl}}"],
+              "path": ["books", "1", "return"]
+            },
+            "description": "Increments availableCopies by 1."
+          }
+        }
+      ]
+    }
+  ]
+}

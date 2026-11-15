@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, MinLength, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, IsOptional, IsInt, Min, IsEmail, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Role } from '@prisma/client';
 
 export class CreateGenreDto {
   @IsString()
@@ -90,14 +91,60 @@ export class UpdateBookDto {
   genreId?: number;
 }
 
-export class CreateUserDto {
+export class BookQueryDto {
+  @IsOptional()
   @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  genreId?: number;
+}
+
+export class RegisterDto {
+  @IsEmail()
   @IsNotEmpty()
   email!: string;
 
   @IsString()
   @MinLength(6)
   password!: string;
+
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
+}
+
+export class LoginDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password!: string;
+}
+
+export class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken!: string;
+}
+
+export class CreateUserDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
+
+  @IsString()
+  @MinLength(6)
+  password!: string;
+
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
 }
 
 export class CreateReviewDto {
@@ -120,4 +167,3 @@ export class CreateReviewDto {
   @IsString()
   comment?: string;
 }
-
