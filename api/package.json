@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "tsc",
     "start": "node dist/main.js",
     "start:dev": "ts-node src/main.ts",
     "test": "tsx src/test-app.ts",
