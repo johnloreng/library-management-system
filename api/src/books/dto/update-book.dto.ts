@@ -33,3 +33,4 @@ export class UpdateBookDto {
   @Type(() => Number)
   genreId?: number;
 }
+

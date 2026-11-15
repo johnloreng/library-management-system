@@ -11,3 +11,4 @@ export class UpdateGenreDto {
   @IsNotEmpty()
   slug?: string;
 }
+

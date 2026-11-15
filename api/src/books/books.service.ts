@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -60,7 +65,19 @@ export class BooksService {
     return book;
   }
 
-  create(dto: CreateBookDto) {
+  async create(dto: CreateBookDto) {
+    // Verify genre exists
+    const genre = await this.prisma.genre.findUnique({ where: { id: dto.genreId } });
+    if (!genre) {
+      throw new NotFoundException(`Genre #${dto.genreId} does not exist`);
+    }
+
+    // Verify ISBN uniqueness
+    const existing = await this.prisma.book.findUnique({ where: { isbn: dto.isbn } });
+    if (existing) {
+      throw new ConflictException(`Book with ISBN "${dto.isbn}" already exists`);
+    }
+
     const { totalCopies = 1, ...rest } = dto;
     return this.prisma.book.create({
       data: { ...rest, totalCopies, availableCopies: totalCopies },
@@ -70,6 +87,14 @@ export class BooksService {
 
   async update(id: number, dto: UpdateBookDto) {
     await this.findOne(id);
+
+    if (dto.genreId) {
+      const genre = await this.prisma.genre.findUnique({ where: { id: dto.genreId } });
+      if (!genre) {
+        throw new NotFoundException(`Genre #${dto.genreId} does not exist`);
+      }
+    }
+
     return this.prisma.book.update({
       where: { id },
       data: dto,

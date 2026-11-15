@@ -24,3 +24,4 @@ export class QueryBooksDto {
   @Type(() => Number)
   limit?: number;
 }
+

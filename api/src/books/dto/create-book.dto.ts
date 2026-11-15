@@ -34,3 +34,4 @@ export class CreateBookDto {
   @Type(() => Number)
   genreId!: number;
 }
+
