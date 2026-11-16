@@ -84,6 +84,13 @@
       margin-bottom: 1.5rem;
     }
 
+    .grid-single {
+      grid-template-columns: 1fr;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     @media (max-width: 768px) {
       .grid { grid-template-columns: 1fr; }
     }
@@ -104,24 +111,6 @@
       align-items: center;
       gap: 0.5rem;
     }
-
-    .quick-fills {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .btn-chip {
-      background: #334155;
-      color: #cbd5e1;
-      border: none;
-      padding: 0.4rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-chip:hover { background: #475569; color: #fff; }
 
     .form-group {
       margin-bottom: 1rem;
@@ -174,7 +163,7 @@
     .alert-danger { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; }
 
     .token-box {
-      margin-top: 1rem;
+      margin-top: 0.5rem;
       background: #0f172a;
       padding: 0.75rem;
       border-radius: 6px;
@@ -227,6 +216,21 @@
     .action-btn:hover { background: #475569; }
     .action-btn-danger { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: #fca5a5; }
     .action-btn-danger:hover { background: var(--danger); color: #fff; }
+
+    .session-info {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .session-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+    .session-row:last-child { margin-bottom: 0; }
   </style>
 </head>
 <body>
@@ -240,38 +244,54 @@
       </div>
     </header>
 
-    <div class="grid">
-      <!-- Login Card -->
-      <div class="card">
+    <div class="grid" id="mainGrid">
+      <!-- Login Card (shown when logged out) -->
+      <div class="card" id="loginCard">
         <h2 class="card-title">🔑 Account Login</h2>
-        <div class="quick-fills">
-          <button class="btn-chip" onclick="fillLibrarian()">👤 Fill Librarian</button>
-          <button class="btn-chip" onclick="fillPatron()">📖 Fill Patron</button>
-        </div>
         <form id="loginForm" onsubmit="handleLogin(event)">
           <div class="form-group">
             <label>Email Address</label>
-            <input type="email" id="loginEmail" required placeholder="name@library.com" value="librarian@library.com">
+            <input type="email" id="loginEmail" required placeholder="Enter your email...">
           </div>
           <div class="form-group">
             <label>Password</label>
-            <input type="password" id="loginPassword" required placeholder="••••••••" value="librarian123">
+            <input type="password" id="loginPassword" required placeholder="Enter your password...">
           </div>
           <button type="submit" class="btn-primary" id="loginSubmitBtn">Sign In</button>
         </form>
 
         <div id="loginAlert" class="alert"></div>
-        <div id="tokenContainer" style="display:none;">
-          <label style="margin-top:0.75rem;">Active JWT Token:</label>
-          <div class="token-box" id="jwtTokenDisplay"></div>
-        </div>
       </div>
 
-      <!-- RolesGuard Testing Card -->
-      <div class="card">
+      <!-- Active Session Dashboard Card (shown when logged in) -->
+      <div class="card" id="sessionCard" style="display: none;">
+        <h2 class="card-title">👤 Active Session</h2>
+        <div class="session-info">
+          <div class="session-row">
+            <span style="color:var(--text-muted);">Account:</span>
+            <strong id="sessionEmail"></strong>
+          </div>
+          <div class="session-row">
+            <span style="color:var(--text-muted);">Detected Role:</span>
+            <span id="sessionRoleBadge" class="badge"></span>
+          </div>
+          <div class="session-row">
+            <span style="color:var(--text-muted);">Status:</span>
+            <span style="color:var(--success); font-weight:600;">● Active</span>
+          </div>
+        </div>
+
+        <label>Active JWT Token:</label>
+        <div class="token-box" id="jwtTokenDisplay"></div>
+
+        <button class="action-btn action-btn-danger" style="margin-top: 1rem; width:100%; padding:0.6rem;" onclick="logout()">Sign Out</button>
+      </div>
+
+      <!-- RolesGuard Testing Card (HIDDEN until logged in) -->
+      <div class="card" id="rolesGuardCard" style="display: none;">
         <h2 class="card-title">🛡️ RolesGuard Permission Test</h2>
         <p style="color:var(--text-muted); font-size:0.875rem; margin-bottom:1rem;">
-          Test creating a book using your active session. Only accounts with role <strong>LIBRARIAN</strong> are permitted by the <code>RolesGuard</code>.
+          Test creating a book using your active session. Only accounts with detected role <strong>LIBRARIAN</strong> are permitted by the <code>RolesGuard</code>.
         </p>
 
         <form id="createBookForm" onsubmit="handleCreateBook(event)">
@@ -300,7 +320,7 @@
       </div>
     </div>
 
-    <!-- Catalog & Search -->
+    <!-- Catalog & Search (always visible) -->
     <div class="card catalog-section">
       <h2 class="card-title">📖 Live Book Catalog (Search & Genre Filter)</h2>
       <div class="search-bar">
@@ -335,16 +355,6 @@
     let currentUser = null;
     let searchTimeout = null;
 
-    function fillLibrarian() {
-      document.getElementById('loginEmail').value = 'librarian@library.com';
-      document.getElementById('loginPassword').value = 'librarian123';
-    }
-
-    function fillPatron() {
-      document.getElementById('loginEmail').value = 'patron@library.org';
-      document.getElementById('loginPassword').value = 'secure_password_hash';
-    }
-
     async function handleLogin(e) {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
@@ -371,9 +381,8 @@
         localStorage.setItem('library_jwt', authToken);
         localStorage.setItem('library_user', JSON.stringify(currentUser));
 
-        alertBox.className = 'alert alert-success';
-        alertBox.innerText = `✓ Login successful! Logged in as ${currentUser.email} (${currentUser.role})`;
-        alertBox.style.display = 'block';
+        // Clear password input
+        document.getElementById('loginPassword').value = '';
 
         updateUI();
       } catch (err) {
@@ -388,6 +397,10 @@
       currentUser = null;
       localStorage.removeItem('library_jwt');
       localStorage.removeItem('library_user');
+      const loginAlert = document.getElementById('loginAlert');
+      if (loginAlert) loginAlert.style.display = 'none';
+      const guardAlert = document.getElementById('guardAlert');
+      if (guardAlert) guardAlert.style.display = 'none';
       updateUI();
     }
 
@@ -395,22 +408,43 @@
       const userDisplay = document.getElementById('userDisplay');
       const roleBadge = document.getElementById('roleBadge');
       const logoutBtn = document.getElementById('logoutBtn');
-      const tokenContainer = document.getElementById('tokenContainer');
+      const loginCard = document.getElementById('loginCard');
+      const sessionCard = document.getElementById('sessionCard');
+      const rolesGuardCard = document.getElementById('rolesGuardCard');
+      const mainGrid = document.getElementById('mainGrid');
       const tokenDisplay = document.getElementById('jwtTokenDisplay');
+      const sessionEmail = document.getElementById('sessionEmail');
+      const sessionRoleBadge = document.getElementById('sessionRoleBadge');
 
       if (authToken && currentUser) {
+        // Automatically detected role & status
+        const role = currentUser.role || 'PATRON';
         userDisplay.innerText = currentUser.email;
-        roleBadge.innerText = currentUser.role;
-        roleBadge.className = currentUser.role === 'LIBRARIAN' ? 'badge badge-librarian' : 'badge badge-patron';
+        roleBadge.innerText = role;
+        roleBadge.className = role === 'LIBRARIAN' ? 'badge badge-librarian' : 'badge badge-patron';
         logoutBtn.style.display = 'inline-block';
-        tokenContainer.style.display = 'block';
+
+        // Switch login screen to dashboard session & reveal RolesGuard
+        loginCard.style.display = 'none';
+        sessionCard.style.display = 'block';
+        rolesGuardCard.style.display = 'block';
+        mainGrid.className = 'grid';
+
+        sessionEmail.innerText = currentUser.email;
+        sessionRoleBadge.innerText = role;
+        sessionRoleBadge.className = role === 'LIBRARIAN' ? 'badge badge-librarian' : 'badge badge-patron';
         tokenDisplay.innerText = authToken;
       } else {
+        // Logged out / initial login screen
         userDisplay.innerText = 'Not Logged In';
         roleBadge.innerText = 'GUEST';
         roleBadge.className = 'badge badge-guest';
         logoutBtn.style.display = 'none';
-        tokenContainer.style.display = 'none';
+
+        loginCard.style.display = 'block';
+        sessionCard.style.display = 'none';
+        rolesGuardCard.style.display = 'none'; // HIDDEN on login screen
+        mainGrid.className = 'grid grid-single';
       }
     }
 
@@ -435,7 +469,7 @@
             title,
             author,
             isbn,
-            description: 'Created from web portal',
+            description: 'Created from dashboard portal',
             genreId,
             totalCopies: 3
           })
@@ -561,4 +595,3 @@
   </script>
 </body>
 </html>
-
