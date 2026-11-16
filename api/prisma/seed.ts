@@ -169,24 +169,55 @@ async function main() {
     });
   }
 
-  // Seed librarian account
-  const librarianEmail = "librarian@library.com";
-  const hashedPassword = await bcrypt.hash("librarian123", 10);
+  // Seed librarian accounts (hashed with bcrypt)
+  const librarianHashedPassword = await bcrypt.hash("librarian123", 10);
+  const patronHashedPassword = await bcrypt.hash("patron123", 10);
 
-  const librarian = await prisma.user.upsert({
-    where: { email: librarianEmail },
+  // 1. librarian@library.com
+  await prisma.user.upsert({
+    where: { email: "librarian@library.com" },
     update: {
+      password: librarianHashedPassword,
       role: Role.LIBRARIAN,
     },
     create: {
-      email: librarianEmail,
-      password: hashedPassword,
+      email: "librarian@library.com",
+      password: librarianHashedPassword,
       role: Role.LIBRARIAN,
     },
   });
 
+  // 2. librarian@library.org
+  await prisma.user.upsert({
+    where: { email: "librarian@library.org" },
+    update: {
+      password: librarianHashedPassword,
+      role: Role.LIBRARIAN,
+    },
+    create: {
+      email: "librarian@library.org",
+      password: librarianHashedPassword,
+      role: Role.LIBRARIAN,
+    },
+  });
+
+  // 3. patron@library.org
+  await prisma.user.upsert({
+    where: { email: "patron@library.org" },
+    update: {
+      password: patronHashedPassword,
+      role: Role.PATRON,
+    },
+    create: {
+      email: "patron@library.org",
+      password: patronHashedPassword,
+      role: Role.PATRON,
+    },
+  });
+
   console.log(`Seeded ${genres.length} genres and ${sampleBooks.length} books successfully.`);
-  console.log(`Seeded librarian account: ${librarian.email} (Role: ${librarian.role})`);
+  console.log(`Seeded librarian accounts: librarian@library.com & librarian@library.org (Password: librarian123)`);
+  console.log(`Seeded patron account: patron@library.org (Password: patron123)`);
 }
 
 main()
