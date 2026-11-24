@@ -1,3 +1,4 @@
+// App.jsx: Defines routes for '/' (HomePage) and '/books/:id' (BookDetail)
 import { Routes, Route, Link } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import BookDetail from './pages/BookDetail';
